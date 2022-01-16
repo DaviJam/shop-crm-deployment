@@ -1,0 +1,6 @@
+secret_path         = "directory to secret.ini"
+region              = "us-east-1"
+private_key_path    = "directory to .pem"
+ec2_avail_zone      = "us-east-1a"
+author_name         = "david"
+main_dir            = "Main directory of the repo."

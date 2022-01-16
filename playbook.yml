@@ -1,0 +1,84 @@
+---
+- name: playbook
+  hosts: webserver
+  vars_files:
+    - private_settings.yml
+  environment:
+    MYSQL_USER: 'spring'
+    MYSQL_PASSWORD: '{{ MYSQL_PASSWORD }}'
+    MYSQL_DATABASE: 'shopcrm'
+
+  pre_tasks:
+    - name: Install aptitude using apt
+      apt: name=aptitude update_cache=yes force_apt_get=yes
+      become: yes
+
+    - name: Install required system packages
+      apt: name={{ item }} update_cache=yes
+      become: yes
+      loop:
+        [
+            "apt-transport-https",
+            "ca-certificates",
+            "curl",
+            "software-properties-common",
+            "python3-pip",
+            "python-apt",
+            "virtualenv",
+            "python-setuptools",
+            "net-tools",
+            "apache2"
+        ]
+
+    - name: Enable apache2 
+      service:
+        name: apache2
+        enabled: yes
+        state: started
+        
+    - name: Add Docker GPG apt Key
+      become: yes
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker Repository
+      become: yes
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu bionic stable
+        state: present
+
+    - name: Update apt and install docker-ce and docker-compose
+      become: yes
+      apt: name={{ item }} update_cache=yes
+      loop: [ "docker-ce","docker-compose" ]
+
+    - name: Install Python Docker Module
+      pip:
+        name: ["docker","docker-compose==1.25.0"]
+
+    - name: Copy to remote
+      copy:
+        src: ./docker_usr_config.sh
+        dest: '{{ WORKING_DIR }}'
+        mode: u=rxw,g=rw,o=r
+
+    - name: Add user to docker group
+      become: true
+      shell:
+        cmd: ./docker_usr_config.sh &
+      args:
+        chdir: '{{ WORKING_DIR }}'
+
+  tasks:
+    - name: Copy to remote
+      copy:
+        src: ./docker-compose.yml
+        dest: '{{ WORKING_DIR }}'
+
+    - name: run docker-compose
+      become: true
+      community.docker.docker_compose:
+        project_src: '{{ WORKING_DIR }}'
+
+
