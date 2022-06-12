@@ -13,7 +13,7 @@ resource "aws_instance" "ec2" {
     command = "echo IP : ${var.public_ip}, ID: ${aws_instance.ec2.id}, Zone: ${aws_instance.ec2.availability_zone} >> private_data.txt"
   }
   
-  # Retrieve the EC2 public ip and pass it to ansible to install required package.
+  # Retrieve the EC2 public ip and pass it to ansible to install required package and run docker-compose which will create our containers(app & db).
   provisioner "local-exec" {
     command = "echo '[webserver]\n${self.public_ip}' > ${var.main_directory}/hosts.ini"
   }
